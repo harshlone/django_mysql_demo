@@ -2,23 +2,37 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
+# Load .env
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# ========================
+# Security
+# ========================
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "replace-me")
-DEBUG = os.getenv("DJANGO_DEBUG", "True") == "True"
+DEBUG = os.getenv("DJANGO_DEBUG", "False") == "True"
 
+# Allowed hosts
+if DEBUG:
+    ALLOWED_HOSTS = ["*"]
+else:
+    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")  # set in .env
+
+# ========================
 # Detect if running in Docker
+# ========================
 RUNNING_IN_DOCKER = os.path.exists("/.dockerenv")
 
-# Database host and port selection
+# ========================
+# Database Configuration
+# ========================
 if RUNNING_IN_DOCKER:
     DB_HOST = os.getenv("DB_HOST", "db")  # Docker service name
     DB_PORT = int(os.getenv("DB_PORT", 3306))
 else:
-    DB_HOST = os.getenv("DB_HOST", "localhost")  # Local Windows MySQL
-    DB_PORT = int(os.getenv("DB_PORT", 3307))
+    DB_HOST = os.getenv("DB_HOST", "localhost")  # Local dev
+    DB_PORT = int(os.getenv("DB_PORT", 3306))
 
 DATABASES = {
     "default": {
@@ -28,15 +42,13 @@ DATABASES = {
         "PASSWORD": os.getenv("DB_PASSWORD"),
         "HOST": DB_HOST,
         "PORT": DB_PORT,
+        "OPTIONS": {"init_command": "SET sql_mode='STRICT_TRANS_TABLES'"},
     }
 }
 
-# ALLOWED_HOSTS handling
-if DEBUG:
-    ALLOWED_HOSTS = ["*"]
-else:
-    ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
-
+# ========================
+# Apps
+# ========================
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -48,9 +60,12 @@ INSTALLED_APPS = [
     "products",
 ]
 
+# ========================
+# Middleware
+# ========================
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  # Serve static files
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -60,21 +75,36 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "demo_project.urls"
 
+# ========================
+# Templates
+# ========================
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [BASE_DIR / "products" / "templates"],
         "APP_DIRS": True,
-        "OPTIONS": {"context_processors": [
-            "django.template.context_processors.debug",
-            "django.template.context_processors.request",
-            "django.contrib.auth.context_processors.auth",
-            "django.contrib.messages.context_processors.messages",
-        ]},
-    },
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.debug",
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
+            ]
+        },
+    }
 ]
 
 WSGI_APPLICATION = "demo_project.wsgi.application"
 
+# ========================
+# Static Files
+# ========================
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_DIRS = [BASE_DIR / "products" / "static"]
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+# ========================
+# Default Auto Field
+# ========================
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
