@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Product Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>Product Category Counts</h1>
+  <canvas id="categoryChart" width="600" height="300"></canvas>
+
+  <script>
+    const ctx = document.getElementById('categoryChart').getContext('2d');
+    const categories = {{ categories|safe }};
+    const counts = {{ counts|safe }};
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: categories,
+        datasets: [{
+          label: 'Products by category',
+          data: counts,
+        }]
+      },
+      options: { scales: { y: { beginAtZero: true } } }
+    });
+  </script>
+</body>
+</html>
